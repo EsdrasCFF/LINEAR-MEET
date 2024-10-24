@@ -1,0 +1,14 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["prettier", "simple-import-sort", "tailwindcss"],
+  "rules": {
+    "prettier/prettier": "error",
+    "simple-import-sort/imports": "warn",
+    "simple-import-sort/exports": "warn",
+    "react/no-unescaped-entities": "off"
+  }
+}
