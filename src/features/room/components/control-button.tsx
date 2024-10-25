@@ -19,7 +19,11 @@ export function ControlButton({ icon: Icon, disabledIcon: DIcon, ...rest }: Cont
   }
 
   return (
-    <button {...rest} className={cn('rounded-md bg-customSecondary px-3 py-2 text-white')} onClick={onClickedButton}>
+    <button
+      {...rest}
+      className={cn('rounded-md bg-customSecondary px-3 py-2 text-white', !clicked && 'bg-red-500')}
+      onClick={onClickedButton}
+    >
       {clicked ? <Icon size={25} /> : <DIcon size={25} />}
     </button>
   )
