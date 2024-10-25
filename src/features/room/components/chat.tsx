@@ -7,7 +7,7 @@ export function Chat() {
 
   return (
     <div className="flex h-full w-full flex-col justify-between rounded-md bg-customSecondary px-4 py-4">
-      <div className="flex max-h-[calc(100vh-270px)] flex-col gap-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+      <div className="flex max-h-[calc(100vh-280px)] flex-col gap-3 overflow-y-auto [&::-webkit-scrollbar]:hidden">
         {messageArray.map((value, index) => (
           <ChatMessage index={Number(index)} key={String(value) + '_' + String(index)} />
         ))}
@@ -15,7 +15,7 @@ export function Chat() {
 
       <form className="relative flex h-12 w-full items-center rounded-sm bg-gray6 p-2">
         <input
-          className="text-gray2 h-full w-full bg-transparent pl-2 pr-5 text-[0.625rem] outline-none"
+          className="h-full w-full bg-transparent pl-2 pr-5 text-[0.625rem] text-gray2 outline-none"
           placeholder="Enviar mensagem"
         />
         <button>
