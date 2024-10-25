@@ -3,7 +3,7 @@ import { SiGotomeeting } from 'react-icons/si'
 
 export function Header() {
   return (
-    <header className="flex h-28 w-full items-center justify-center bg-customSecondary">
+    <header className="flex max-h-[5.5rem] min-h-[5.5rem] w-full items-center justify-center bg-customSecondary">
       <div className="flex w-full max-w-7xl justify-between px-5">
         <div className="flex items-center gap-5">
           <BsFillCloudsFill className="text-customPrimary" size={30} />
