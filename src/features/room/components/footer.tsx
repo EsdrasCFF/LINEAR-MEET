@@ -2,6 +2,7 @@ import { MicIcon, MicOffIcon, PhoneIcon, PhoneOff, Tv2, Video, VideoOff } from '
 
 import { ControlButton } from './control-button'
 import { MdTvOff } from 'react-icons/md'
+import { useState } from 'react'
 
 export function Footer() {
   const icons = [
@@ -15,8 +16,12 @@ export function Footer() {
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
 
+  const [isMuted, setIsMuted] = useState(false)
+  const [isCameraOff, setIsCameraOff] = useState(false)
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
+
   return (
-    <footer className="fixed bottom-2 flex w-full items-center justify-center bg-customBackground px-5 font-rubik">
+    <footer className="flex w-full items-center justify-center bg-customBackground px-5 font-rubik">
       <div className="bottom-5 grid w-full max-w-7xl grid-cols-3 items-center">
         <span className="text-xl font-medium text-white">{hours + ':' + minutes}</span>
         <div className="flex items-center justify-center gap-2">
