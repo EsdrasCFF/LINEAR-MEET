@@ -22,7 +22,7 @@ export default function RootLayout({
         className={`${rubik.className} ${inter.className} flex h-screen max-h-screen w-full flex-col items-center overflow-y-auto bg-customBackground antialiased`}
       >
         <Header />
-        {children}
+        <div className="max-w-7xl flex-1">{children}</div>
       </body>
     </html>
   )
