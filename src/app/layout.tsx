@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Inter, Rubik } from 'next/font/google'
 import { Header } from '@/components/header'
+import { SocketProvider } from '@/contexts/socket-context'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -21,8 +22,10 @@ export default function RootLayout({
       <body
         className={`${rubik.className} ${inter.className} flex h-screen max-h-screen w-full flex-col items-center overflow-y-auto bg-customBackground antialiased`}
       >
-        <Header />
-        <div className="w-full max-w-7xl flex-1">{children}</div>
+        <SocketProvider>
+          <Header />
+          <div className="w-full max-w-7xl flex-1">{children}</div>
+        </SocketProvider>
       </body>
     </html>
   )
