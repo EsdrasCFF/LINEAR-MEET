@@ -21,8 +21,8 @@ export function Footer() {
   const [isScreenSharing, setIsScreenSharing] = useState(false)
 
   return (
-    <footer className="flex w-full items-center justify-center bg-customBackground px-5 font-rubik">
-      <div className="bottom-5 grid w-full max-w-7xl grid-cols-3 items-center">
+    <footer className="fixed bottom-0 left-0 right-0 flex max-h-20 min-h-20 w-full items-center justify-center bg-customBackground p-5 font-rubik">
+      <div className="grid w-full max-w-7xl grid-cols-3 items-center xl:px-5">
         <span className="text-xl font-medium text-white">{hours + ':' + minutes}</span>
         <div className="flex items-center justify-center gap-2">
           {icons.map((icon, index) => (
