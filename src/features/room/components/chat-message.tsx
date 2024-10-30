@@ -1,10 +1,12 @@
 import { cn } from '@/lib/utils'
+import { IChatMessage } from './chat'
 
 interface ChatMessageProps {
   index: number
+  data: IChatMessage
 }
 
-export function ChatMessage({ index }: ChatMessageProps) {
+export function ChatMessage({ index, data }: ChatMessageProps) {
   const isEven = index % 2 == 0
 
   return (
@@ -12,14 +14,11 @@ export function ChatMessage({ index }: ChatMessageProps) {
       <div
         className={cn('flex items-center gap-3 font-semibold leading-none', isEven ? 'text-purple3' : 'text-lightBlue')}
       >
-        <span className={cn('font-inter text-xs')}>Esdras Castro</span>
-        <span className="text-[10px]">10:20</span>
+        <span className={cn('font-inter text-xs capitalize')}>{data.username}</span>
+        <span className="text-[10px]">{data.time}</span>
       </div>
 
-      <p className="text-white3 text-[0.625rem]">
-        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Vero, reprehenderit. Autem accusantium harum quisquam
-        maxime
-      </p>
+      <p className="text-[0.625rem] text-white3">{data.message}</p>
     </div>
   )
 }
