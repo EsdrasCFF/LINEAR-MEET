@@ -13,7 +13,8 @@ const joinRoomFormSchema = z.object({
   roomId: z
     .string({ required_error: 'Room Id é obrigatório para acessar a reunião!' })
     .trim()
-    .min(9, { message: 'Código inválido, informe um ID válido!' }),
+    .min(9, { message: 'Código inválido, informe um ID válido!' })
+    .refine((value) => value.includes('-'), { message: 'Código da reunião inválido!' }),
 })
 
 type JoinRoomFormData = z.infer<typeof joinRoomFormSchema>
@@ -30,7 +31,8 @@ export function JoinRoomForm() {
   const hasErrors = !!errors.name?.message || !!errors.roomId?.message
 
   function handleSubmitFormData(data: JoinRoomFormData) {
-    console.log(data)
+    sessionStorage.setItem('@linear-meet:username', data.name)
+    window.location.href = `/room/${data.roomId}`
   }
 
   return (

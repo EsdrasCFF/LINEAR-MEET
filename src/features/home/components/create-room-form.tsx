@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { CustomButton } from '@/components/custom-button'
 import CustomInput from '@/components/custom-input'
+import { useRouter } from 'next/navigation'
 
 const createRoomFormSchema = z.object({
   name: z
@@ -24,10 +25,26 @@ export function CreateRoomForm() {
     resolver: zodResolver(createRoomFormSchema),
   })
 
+  const router = useRouter()
+
   const hasErrors = !!errors.name?.message
 
   function handleSubmitFormData(data: CreateRoomFormData) {
-    console.log(data)
+    sessionStorage.setItem('@linear-meet:username', data.name)
+    console.log('Sala criada')
+    const roomId = generateRandomRoomId()
+
+    router.push(`/room/${roomId}`)
+  }
+
+  function generateRandomRoomId() {
+    const random = Math.random().toString(32)
+
+    const leftSide = random.substring(3, 7)
+    const rightSide = random.substring(7, 11)
+    const roomId = leftSide + '-' + rightSide
+
+    return roomId.toUpperCase()
   }
 
   return (
