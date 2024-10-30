@@ -36,7 +36,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="hidden h-full w-[20%] sm:flex sm:w-[40%] md:w-[20%]">
-          <Chat />
+          <Chat roomId={params.id} />
         </div>
       </div>
       <Footer />
