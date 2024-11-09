@@ -10,6 +10,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
   const localStream = useRef<HTMLVideoElement>(null)
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
+  console.log('PeerConnections: ', peerConnections.current)
 
   const initCamera = async () => {
     const video = await navigator.mediaDevices.getUserMedia({
@@ -23,7 +24,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     if (localStream.current) localStream.current.srcObject = video
   }
 
-  const createPeerConnection = (socketId: string) => {
+  const createPeerConnection = async (socketId: string, createOffer: boolean) => {
     const config = {
       iceServers: [
         {
@@ -34,6 +35,18 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
     const peer = new RTCPeerConnection(config)
     peerConnections.current[socketId] = peer
+
+    if (createOffer) {
+      const peerConnection = peerConnections.current[socketId]
+      const offer = await peerConnection.createOffer()
+      await peerConnection.setLocalDescription(offer)
+
+      socket?.emit('sdp', {
+        to: socketId,
+        sender: socket?.id,
+        description: peerConnection.localDescription,
+      })
+    }
   }
 
   useEffect(() => {
@@ -47,13 +60,22 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       await initCamera()
     })
 
+    socket?.on('newUserStart', (data: any) => {
+      console.log('Usuário conectado na sala:', data)
+      createPeerConnection(data.sender, true)
+    })
+
     socket?.on('new user', (data: any) => {
-      console.log('Novo usuário conectado', data)
-      createPeerConnection(data.socketId)
+      console.log('Novo usuário', data)
+      createPeerConnection(data.socketId, false)
       socket.emit('newUserStart', {
         to: data.socketId,
         sender: socket.id,
       })
+    })
+
+    socket?.on('sdp', (data: any) => {
+      console.log('Oferta recebida:', data)
     })
   }, [socket])
 
