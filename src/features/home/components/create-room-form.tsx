@@ -34,7 +34,7 @@ export function CreateRoomForm() {
     console.log('Sala criada')
     const roomId = generateRandomRoomId()
 
-    router.push(`/room/${roomId}`)
+    window.location.href = `/room/${roomId}`
   }
 
   function generateRandomRoomId() {

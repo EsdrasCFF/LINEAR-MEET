@@ -76,3 +76,9 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.mirror-mode {
+  -ms-transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+}
