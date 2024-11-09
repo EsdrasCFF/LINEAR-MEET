@@ -3,11 +3,16 @@
 import { SocketContext } from '@/contexts/socket-context'
 import { Chat } from '@/features/room/components/chat'
 import { Footer } from '@/features/room/components/footer'
-import { useContext, useEffect, useRef } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 
 interface IAnswer {
   sender: string
   description: RTCSessionDescription
+}
+
+interface ICandidate {
+  candidate: RTCIceCandidate
+  sender: string
 }
 
 export default function RoomPage({ params }: { params: { id: string } }) {
@@ -15,6 +20,10 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
   const localStream = useRef<HTMLVideoElement>(null)
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
+
+  const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
+
+  console.log(remoteStreams)
 
   const initCamera = async () => {
     const video = await navigator.mediaDevices.getUserMedia({
@@ -40,6 +49,8 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     const peer = new RTCPeerConnection(config)
     peerConnections.current[socketId] = peer
 
+    const peerConnection = peerConnections.current[socketId]
+
     if (createOffer) {
       console.log('Creiando uma oferta')
       const peerConnection = peerConnections.current[socketId]
@@ -51,6 +62,21 @@ export default function RoomPage({ params }: { params: { id: string } }) {
         sender: socket?.id,
         description: peerConnection.localDescription,
       })
+    }
+
+    peerConnection.ontrack = (event) => {
+      const remoteStream = event.streams[0]
+      setRemoteStreams((prev) => [...prev, remoteStream])
+    }
+
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket?.emit('ice candidates', {
+          to: socketId,
+          sender: socket.id,
+          candidate: event.candidate,
+        })
+      }
     }
   }
 
@@ -79,6 +105,13 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       createPeerConnection(data.sender, true)
     })
 
+    socket?.on('ice candidates', async (data: ICandidate) => {
+      const peerConnection = peerConnections.current[data.sender]
+      if (data.candidate) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
+      }
+    })
+
     socket?.on('sdp', async (data: IAnswer) => {
       const peerConnection = peerConnections.current[data.sender]
 
@@ -104,9 +137,19 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     <div className="flex h-[calc(100%-4rem)] w-full flex-col justify-between gap-5 p-5">
       <div className="flex h-[calc(100vh-188px)] w-full gap-5">
         <div className="flex h-full w-full flex-col gap-5 overflow-y-auto sm:grid sm:w-[60%] sm:grid-cols-1 md:w-[80%] md:grid-cols-2 [&::-webkit-scrollbar]:hidden">
-          <div className="h-full w-full rounded-md bg-customSecondary">
-            <video src="" className="mirror-mode h-full w-full" autoPlay playsInline ref={localStream} />
-          </div>
+          {remoteStreams.map((stream, index) => (
+            <div className="h-full w-full rounded-md bg-customSecondary" key={String(index + 10)}>
+              <video
+                src=""
+                className="mirror-mode h-full w-full"
+                autoPlay
+                playsInline
+                ref={(video) => {
+                  if (video && video.srcObject != stream) video.srcObject = stream
+                }}
+              />
+            </div>
+          ))}
           <div className="h-full w-full rounded-md bg-customSecondary">
             <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
           </div>
