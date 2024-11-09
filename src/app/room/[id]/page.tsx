@@ -5,12 +5,16 @@ import { Chat } from '@/features/room/components/chat'
 import { Footer } from '@/features/room/components/footer'
 import { useContext, useEffect, useRef } from 'react'
 
+interface IAnswer {
+  sender: string
+  description: RTCSessionDescription
+}
+
 export default function RoomPage({ params }: { params: { id: string } }) {
   const { socket } = useContext(SocketContext)
 
   const localStream = useRef<HTMLVideoElement>(null)
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
-  console.log('PeerConnections: ', peerConnections.current)
 
   const initCamera = async () => {
     const video = await navigator.mediaDevices.getUserMedia({
@@ -37,6 +41,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     peerConnections.current[socketId] = peer
 
     if (createOffer) {
+      console.log('Creiando uma oferta')
       const peerConnection = peerConnections.current[socketId]
       const offer = await peerConnection.createOffer()
       await peerConnection.setLocalDescription(offer)
@@ -60,13 +65,8 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       await initCamera()
     })
 
-    socket?.on('newUserStart', (data: any) => {
-      console.log('Usuário conectado na sala:', data)
-      createPeerConnection(data.sender, true)
-    })
-
     socket?.on('new user', (data: any) => {
-      console.log('Novo usuário', data)
+      console.log('Novo usuário tentando conectar', data)
       createPeerConnection(data.socketId, false)
       socket.emit('newUserStart', {
         to: data.socketId,
@@ -74,8 +74,29 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       })
     })
 
-    socket?.on('sdp', (data: any) => {
-      console.log('Oferta recebida:', data)
+    socket?.on('newUserStart', (data: any) => {
+      console.log('Usuário conectado na sala:', data)
+      createPeerConnection(data.sender, true)
+    })
+
+    socket?.on('sdp', async (data: IAnswer) => {
+      const peerConnection = peerConnections.current[data.sender]
+
+      if (data.description.type === 'offer') {
+        await peerConnection.setRemoteDescription(data.description)
+        console.log('Criando resposta')
+        const answer = await peerConnection.createAnswer()
+        await peerConnection.setLocalDescription(answer)
+
+        socket.emit('sdp', {
+          to: data.sender,
+          sender: socket.id,
+          description: peerConnection.localDescription,
+        })
+      } else if (data.description.type === 'answer') {
+        console.log('Ouvindo oferta')
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.description))
+      }
     })
   }, [socket])
 
