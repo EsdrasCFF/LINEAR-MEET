@@ -8,14 +8,15 @@ import { IconType } from 'react-icons'
 interface ControlButtonProps extends ComponentProps<'button'> {
   icon: LucideIcon | IconType
   disabledIcon: LucideIcon | IconType
+  onToggleClick: () => void
 }
 
-export function ControlButton({ icon: Icon, disabledIcon: DIcon, ...rest }: ControlButtonProps) {
+export function ControlButton({ icon: Icon, disabledIcon: DIcon, onToggleClick, ...rest }: ControlButtonProps) {
   const [clicked, setClicked] = useState(true)
 
   function onClickedButton() {
     setClicked((value) => !value)
-    console.log({ clicked })
+    onToggleClick()
   }
 
   return (
