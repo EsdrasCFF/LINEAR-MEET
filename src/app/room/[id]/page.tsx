@@ -22,10 +22,11 @@ export default function RoomPage({ params }: { params: { id: string } }) {
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
 
   const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
+  const [videoMediaStream, setVideoMediaStream] = useState<MediaStream | null>(null)
 
   console.log(remoteStreams)
 
-  const initCamera = async () => {
+  const initLocaleCamera = async () => {
     const video = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: {
@@ -34,7 +35,20 @@ export default function RoomPage({ params }: { params: { id: string } }) {
       },
     })
 
+    setVideoMediaStream(video)
     if (localStream.current) localStream.current.srcObject = video
+  }
+
+  const initRemoteCamera = async () => {
+    const video = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+      },
+    })
+
+    return video
   }
 
   const createPeerConnection = async (socketId: string, createOffer: boolean) => {
@@ -50,6 +64,17 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     peerConnections.current[socketId] = peer
 
     const peerConnection = peerConnections.current[socketId]
+
+    if (videoMediaStream) {
+      videoMediaStream.getAudioTracks().forEach((track) => {
+        peerConnection.addTrack(track, videoMediaStream)
+      })
+    } else {
+      const video = await initRemoteCamera()
+      video.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, video)
+      })
+    }
 
     if (createOffer) {
       console.log('Creiando uma oferta')
@@ -88,7 +113,7 @@ export default function RoomPage({ params }: { params: { id: string } }) {
         socketId: socket.id,
       })
 
-      await initCamera()
+      await initLocaleCamera()
     })
 
     socket?.on('new user', (data: any) => {
@@ -137,6 +162,9 @@ export default function RoomPage({ params }: { params: { id: string } }) {
     <div className="flex h-[calc(100%-4rem)] w-full flex-col justify-between gap-5 p-5">
       <div className="flex h-[calc(100vh-188px)] w-full gap-5">
         <div className="flex h-full w-full flex-col gap-5 overflow-y-auto sm:grid sm:w-[60%] sm:grid-cols-1 md:w-[80%] md:grid-cols-2 [&::-webkit-scrollbar]:hidden">
+          <div className="h-full w-full rounded-md bg-customSecondary">
+            <video src="" className="mirror-mode h-full w-full" autoPlay ref={localStream} />
+          </div>
           {remoteStreams.map((stream, index) => (
             <div className="h-full w-full rounded-md bg-customSecondary" key={String(index + 10)}>
               <video
@@ -150,21 +178,19 @@ export default function RoomPage({ params }: { params: { id: string } }) {
               />
             </div>
           ))}
-          <div className="h-full w-full rounded-md bg-customSecondary">
+          {/* <div className="h-full w-full rounded-md bg-customSecondary">
             <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
           </div>
+          
           <div className="h-full w-full rounded-md bg-customSecondary">
             <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
-          </div>
-          <div className="h-full w-full rounded-md bg-customSecondary">
-            <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
-          </div>
+          </div> */}
         </div>
         <div className="hidden h-full w-[20%] sm:flex sm:w-[40%] md:w-[20%]">
           <Chat roomId={params.id} />
         </div>
       </div>
-      <Footer />
+      <Footer videoMediaStream={videoMediaStream} />
     </div>
   )
 }
