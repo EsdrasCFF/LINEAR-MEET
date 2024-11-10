@@ -2,18 +2,21 @@ import { MicIcon, MicOffIcon, PhoneIcon, PhoneOff, Tv2, Video, VideoOff } from '
 
 import { ControlButton } from './control-button'
 import { MdTvOff } from 'react-icons/md'
-import { useState } from 'react'
+import { MutableRefObject, useState } from 'react'
 
 interface FooterProps {
   videoMediaStream: MediaStream | null
+  peerConnections: MutableRefObject<Record<string, RTCPeerConnection>>
+  localStream: MutableRefObject<HTMLVideoElement | null>
+  logout: () => void
 }
 
-export function Footer({ videoMediaStream }: FooterProps) {
+export function Footer({ videoMediaStream, peerConnections, localStream, logout }: FooterProps) {
   const icons = [
     { icon: MicIcon, disabledIcon: MicOffIcon, onClick: toggleMuted },
-    { icon: Video, disabledIcon: VideoOff },
-    { icon: Tv2, disabledIcon: MdTvOff },
-    { icon: PhoneIcon, disabledIcon: PhoneOff },
+    { icon: Video, disabledIcon: VideoOff, onClick: toggleVideo },
+    { icon: Tv2, disabledIcon: MdTvOff, onClick: toggleScreenSharing },
+    { icon: PhoneIcon, disabledIcon: PhoneOff, onClick: logout },
   ]
 
   const date = new Date()
@@ -29,7 +32,61 @@ export function Footer({ videoMediaStream }: FooterProps) {
       track.enabled = isMuted
     })
     setIsMuted(!isMuted)
-    console.log('executou')
+
+    Object.values(peerConnections.current).forEach((peerConnection) => {
+      peerConnection.getSenders().forEach((sender: any) => {
+        if (sender.track?.kind === 'audio') {
+          sender.replaceTrack(videoMediaStream?.getAudioTracks().find((track) => track.kind === 'audio'))
+        }
+      })
+    })
+  }
+
+  function toggleVideo() {
+    videoMediaStream?.getVideoTracks().forEach((track) => {
+      track.enabled = isCameraOff
+    })
+
+    setIsCameraOff(!isCameraOff)
+
+    Object.values(peerConnections.current).forEach((peerConnection) => {
+      peerConnection.getSenders().forEach((sender: any) => {
+        if (sender.track?.kind === 'video') {
+          sender.replaceTrack(videoMediaStream?.getVideoTracks().find((track) => track.kind === 'video'))
+        }
+      })
+    })
+  }
+
+  async function toggleScreenSharing() {
+    if (!isScreenSharing) {
+      const videoShareScreen = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      })
+      if (localStream.current) localStream.current.srcObject = videoShareScreen
+
+      Object.values(peerConnections.current).forEach((peerConnections) => {
+        peerConnections.getSenders().forEach((sender: any) => {
+          if (sender.track?.kind === 'video') {
+            sender.replaceTrack(videoShareScreen.getVideoTracks()[0])
+          }
+        })
+      })
+
+      setIsScreenSharing(!isScreenSharing)
+      return
+    }
+
+    if (localStream.current) localStream.current.srcObject = videoMediaStream
+
+    Object.values(peerConnections.current).forEach((peerConnections) => {
+      peerConnections.getSenders().forEach((sender: any) => {
+        if (sender.track?.kind === 'video') {
+          sender.replaceTrack(videoMediaStream?.getVideoTracks()[0])
+        }
+      })
+    })
+    setIsScreenSharing(!isScreenSharing)
   }
 
   return (

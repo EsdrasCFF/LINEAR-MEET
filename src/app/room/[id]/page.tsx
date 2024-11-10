@@ -15,13 +15,18 @@ interface ICandidate {
   sender: string
 }
 
+interface IDataStream {
+  id: string
+  stream: MediaStream
+}
+
 export default function RoomPage({ params }: { params: { id: string } }) {
   const { socket } = useContext(SocketContext)
 
   const localStream = useRef<HTMLVideoElement>(null)
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({})
 
-  const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([])
+  const [remoteStreams, setRemoteStreams] = useState<IDataStream[]>([])
   const [videoMediaStream, setVideoMediaStream] = useState<MediaStream | null>(null)
 
   console.log(remoteStreams)
@@ -91,7 +96,31 @@ export default function RoomPage({ params }: { params: { id: string } }) {
 
     peerConnection.ontrack = (event) => {
       const remoteStream = event.streams[0]
-      setRemoteStreams((prev) => [...prev, remoteStream])
+
+      const dataStream: IDataStream = {
+        id: socketId,
+        stream: remoteStream,
+      }
+
+      setRemoteStreams((prevState: IDataStream[]) => {
+        if (!prevState.some((stream) => stream.id === socketId)) {
+          return [...prevState, dataStream]
+        }
+
+        return prevState
+      })
+    }
+
+    peerConnection.onconnectionstatechange = (event) => {
+      switch (peerConnection.connectionState) {
+        case 'disconnected':
+          setRemoteStreams((prevState) => prevState.filter((stream) => stream.id !== socketId))
+        case 'failed':
+          setRemoteStreams((prevState) => prevState.filter((stream) => stream.id !== socketId))
+        case 'closed':
+          setRemoteStreams((prevState) => prevState.filter((stream) => stream.id !== socketId))
+          break
+      }
     }
 
     peer.onicecandidate = (event) => {
@@ -103,6 +132,28 @@ export default function RoomPage({ params }: { params: { id: string } }) {
         })
       }
     }
+
+    peerConnection.onsignalingstatechange = (event) => {
+      switch (peerConnection.signalingState) {
+        case 'closed':
+          setRemoteStreams((prev) => prev.filter((stream) => stream.id != socketId))
+
+          break
+      }
+    }
+  }
+
+  function logout() {
+    videoMediaStream?.getTracks().forEach((track) => {
+      track.stop()
+    })
+
+    Object.values(peerConnections.current).forEach((peerConnection) => {
+      peerConnection.close()
+    })
+    socket?.disconnect()
+
+    window.location.href = '/'
   }
 
   useEffect(() => {
@@ -173,24 +224,22 @@ export default function RoomPage({ params }: { params: { id: string } }) {
                 autoPlay
                 playsInline
                 ref={(video) => {
-                  if (video && video.srcObject != stream) video.srcObject = stream
+                  if (video && video.srcObject != stream.stream) video.srcObject = stream.stream
                 }}
               />
             </div>
           ))}
-          {/* <div className="h-full w-full rounded-md bg-customSecondary">
-            <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
-          </div>
-          
-          <div className="h-full w-full rounded-md bg-customSecondary">
-            <video src="" className="h-full w-full" autoPlay playsInline ref={localStream} />
-          </div> */}
         </div>
         <div className="hidden h-full w-[20%] sm:flex sm:w-[40%] md:w-[20%]">
           <Chat roomId={params.id} />
         </div>
       </div>
-      <Footer videoMediaStream={videoMediaStream} />
+      <Footer
+        videoMediaStream={videoMediaStream}
+        peerConnections={peerConnections!}
+        localStream={localStream}
+        logout={logout}
+      />
     </div>
   )
 }
